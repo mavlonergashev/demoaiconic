@@ -60,4 +60,40 @@ class ViewModel: ObservableObject {
         }
     }
     
+    private func getModelPath() -> URL {
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return documentsURL.appendingPathComponent(Constants.folderName)
+    }
+    
+    private func checkModelExists() -> Bool {
+        let modelPath = getModelPath()
+        return FileManager.default.fileExists(atPath: modelPath.path)
+    }
+    
+    private func downloadFile() {
+        let remoteURL = Constants.remoteModelURL
+        let localURL = getModelPath()
+        
+        let task = URLSession.shared.downloadTask(with: remoteURL) { tempURL, response, error in
+            guard let tempURL = tempURL, error == nil else {
+                print("Download failed for \(remoteURL): \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            do {
+                try FileManager.default.moveItem(at: tempURL, to: localURL)
+                print("File saved at: \(localURL.path)")
+            } catch {
+                print("Error saving file: \(error.localizedDescription)")
+            }
+        }
+        
+        task.resume()
+    }
+    
+}
+
+enum Constants {
+    static let folderName = "CoreMLModel"
+    static let remoteModelURL = URL(string: "randomurl.com")!
 }
